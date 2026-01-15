@@ -219,6 +219,11 @@
             color: #F44336;
         }
         
+        .status.info {
+            background: #E3F2FD;
+            color: #1976D2;
+        }
+        
         .info-box {
             background: linear-gradient(135deg, #FFF9E6, #FFFACD);
             border-left: 4px solid #FFD700;
@@ -288,7 +293,7 @@
         
         <div class="main-content">
             <div class="image-container">
-                <img id="main-image" src="/yazu%20cerrada.png" alt="Yazumimoon">
+                <img id="main-image" src="yazu%20cerrada.png" alt="Yazumimoon">
                 <canvas id="freckle-canvas" class="canvas-overlay"></canvas>
             </div>
             
@@ -395,21 +400,55 @@
         async function fetchFollowers() {
             try {
                 showStatus('Cargando seguidores...', 'loading');
-                const response = await fetch('/api/followers');
-                const data = await response.json();
                 
-                if (data.followers) {
-                    followerCount = parseInt(data.followers);
-                    freckleCountDisplay.textContent = followerCount;
-                    generateFreckles();
-                    showStatus('¡Pequitas cargadas! 🎉', 'success');
-                    setTimeout(() => status.style.display = 'none', 3000);
-                } else {
-                    throw new Error('Invalid response');
+                // Try local API first (for development with Python server)
+                try {
+                    const response = await fetch('/api/followers', { timeout: 2000 });
+                    const data = await response.json();
+                    
+                    if (data.followers) {
+                        followerCount = parseInt(data.followers);
+                        freckleCountDisplay.textContent = followerCount;
+                        generateFreckles();
+                        showStatus('¡Pequitas cargadas! 🎉', 'success');
+                        setTimeout(() => status.style.display = 'none', 3000);
+                        return;
+                    }
+                } catch (localError) {
+                    console.log('Local API not available, trying CORS proxy...');
                 }
+                
+                // Fallback: Use CORS proxy for GitHub Pages
+                const proxyUrl = 'https://api.allorigins.win/raw?url=';
+                const targetUrl = encodeURIComponent('https://www.nicheprowler.com/tools/twitch/twitch-follower-checker?query=yazumimoon');
+                
+                const response = await fetch(proxyUrl + targetUrl);
+                const html = await response.text();
+                
+                // Extract follower count using regex
+                const match = html.match(/"followerCount":(\d+)|followers['"]?:\s*(\d+)|<span[^>]*>([\d,]+)\s*(?:followers|seguidor)/i);
+                
+                if (match) {
+                    const count = parseInt(match[1] || match[2] || match[3]?.replace(/,/g, '')) || 207;
+                    if (count > 0 && count < 1000000) {
+                        followerCount = count;
+                        freckleCountDisplay.textContent = followerCount;
+                        generateFreckles();
+                        showStatus('¡Pequitas cargadas! 🎉', 'success');
+                        setTimeout(() => status.style.display = 'none', 3000);
+                        return;
+                    }
+                }
+                
+                throw new Error('Could not parse follower count');
             } catch (error) {
                 console.error('Error fetching followers:', error);
-                showStatus('Error: No se pudieron cargar los seguidores', 'error');
+                // Fallback to default
+                followerCount = 207;
+                freckleCountDisplay.textContent = followerCount;
+                generateFreckles();
+                showStatus('Usando valor por defecto (207)', 'info');
+                setTimeout(() => status.style.display = 'none', 3000);
             }
         }
 
