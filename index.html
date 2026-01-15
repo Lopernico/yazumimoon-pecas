@@ -1,0 +1,776 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Yazumimoon - Contador de Pequitas</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Comic Sans MS', 'Arial', sans-serif;
+            background: #f5f5f5;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            margin: 0;
+            overflow: hidden;
+        }
+        
+        /* Animated background decorations */
+        .stars {
+            position: fixed;
+            width: 100%;
+            height: 100%;
+            top: 0;
+            left: 0;
+            z-index: 0;
+            pointer-events: none;
+        }
+        
+        .star {
+            position: absolute;
+            width: 10px;
+            height: 10px;
+            background: radial-gradient(circle, #FFD700, #FFA500);
+            border-radius: 50%;
+            animation: twinkle 3s infinite;
+        }
+        
+        @keyframes twinkle {
+            0%, 100% { opacity: 0.3; }
+            50% { opacity: 1; }
+        }
+        
+        .container {
+            position: relative;
+            z-index: 10;
+            width: 100%;
+            height: 100%;
+            background: white;
+            display: flex;
+            flex-direction: column;
+            padding: 20px;
+            box-shadow: none;
+            border-radius: 0;
+            max-width: 100%;
+        }
+        
+        h1 {
+            font-size: 3.5em;
+            color: #FF1493;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.1);
+            margin-bottom: 10px;
+            animation: bounce 2s infinite;
+        }
+        
+        @keyframes bounce {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-10px); }
+        }
+        
+        .subtitle {
+            font-size: 1.8em;
+            color: #FF69B4;
+            margin-bottom: 20px;
+            font-weight: bold;
+        }
+        
+        .follower-count {
+            font-size: 1.5em;
+            color: #FF1493;
+            font-weight: bold;
+            margin-bottom: 10px;
+            padding: 10px;
+            background: linear-gradient(135deg, #FFB6D9, #FFE5F0);
+            border-radius: 10px;
+            border: 2px dashed #FF69B4;
+            animation: pulse 2s infinite;
+        }
+        
+        .main-content {
+            display: flex;
+            gap: 20px;
+            height: calc(100vh - 250px);
+            margin: 20px 0;
+        }
+        
+        .image-container {
+            position: relative;
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.1);
+            overflow: auto;
+        }
+        
+        .image-container img {
+            max-width: 95%;
+            max-height: 95%;
+            height: auto;
+            border-radius: 10px;
+            display: block;
+        }
+        
+        .image-container img:hover {
+            transform: none;
+        }
+        
+        .canvas-overlay {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            cursor: crosshair;
+            border-radius: 10px;
+        }
+        
+        .controls {
+            width: 280px;
+            background: white;
+            padding: 20px;
+            border-radius: 15px;
+            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.1);
+            overflow-y: auto;
+            border: 2px solid #FFB6D9;
+        }
+        
+        .control-section {
+            margin: 20px 0;
+            padding: 15px;
+            background: white;
+            border-radius: 10px;
+            border-left: 4px solid #FF1493;
+        }
+        
+        .control-label {
+            font-weight: bold;
+            color: #FF1493;
+            margin-bottom: 10px;
+            font-size: 0.95em;
+        }
+        
+        .control-input {
+            width: 100%;
+            padding: 10px;
+            border: 2px solid #FFB6D9;
+            border-radius: 8px;
+            font-size: 1em;
+            transition: border-color 0.3s;
+        }
+        
+        .control-input:focus {
+            outline: none;
+            border-color: #FF1493;
+            box-shadow: 0 0 10px rgba(255, 20, 147, 0.3);
+        }
+        
+        .button {
+            background: linear-gradient(135deg, #FF1493, #FF69B4);
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 0.9em;
+            font-weight: bold;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+            margin: 5px 2px;
+            box-shadow: 0 3px 10px rgba(255, 20, 147, 0.3);
+            width: 100%;
+        }
+        
+        .button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(255, 20, 147, 0.4);
+        }
+        
+        .button:active {
+            transform: translateY(0);
+        }
+        
+        .status {
+            font-size: 1.2em;
+            margin: 20px 0;
+            padding: 15px;
+            border-radius: 10px;
+            font-weight: bold;
+        }
+        
+        .status.loading {
+            background: #FFE5F0;
+            color: #FF1493;
+        }
+        
+        .status.success {
+            background: #E8F5E9;
+            color: #4CAF50;
+        }
+        
+        .status.error {
+            background: #FFEBEE;
+            color: #F44336;
+        }
+        
+        .info-box {
+            background: linear-gradient(135deg, #FFF9E6, #FFFACD);
+            border-left: 4px solid #FFD700;
+            padding: 15px;
+            border-radius: 10px;
+            margin-top: 20px;
+            color: #333;
+            font-size: 0.9em;
+        }
+        
+        .freckle-color-picker {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+        
+        .color-option {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            cursor: pointer;
+            border: 3px solid transparent;
+            transition: transform 0.2s;
+        }
+        
+        .color-option:hover {
+            transform: scale(1.1);
+        }
+        
+        .color-option.selected {
+            border-color: #333;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.3);
+        }
+        
+        .footer {
+            margin-top: auto;
+            font-size: 0.8em;
+            color: #999;
+            text-align: center;
+            padding-top: 10px;
+        }
+        
+        @media (max-width: 1024px) {
+            .main-content {
+                flex-direction: column;
+                height: auto;
+            }
+            
+            .controls {
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div style="padding-bottom: 10px; border-bottom: 2px solid #FFB6D9;">
+            <h1 style="margin: 0; font-size: 2.2em;">✨ YAZUMIMOON ✨</h1>
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 5px;">
+                <div class="subtitle" style="margin: 0; font-size: 1em;">Contador de Pequitas</div>
+                <div class="follower-count" style="margin: 0; font-size: 1.2em;">
+                    <span id="freckle-count">Cargando...</span> pequeñitas
+                </div>
+            </div>
+        </div>
+        
+        <div class="main-content">
+            <div class="image-container">
+                <img id="main-image" src="/yazu%20cerrada.png" alt="Yazumimoon">
+                <canvas id="freckle-canvas" class="canvas-overlay"></canvas>
+            </div>
+            
+            <div class="controls">
+                <div class="control-section">
+                    <div class="control-label">🎨 Color de Pequitas</div>
+                    <div class="freckle-color-picker">
+                        <div class="color-option selected" data-color="#8B4513" style="background-color: #8B4513;" title="Marrón oscuro"></div>
+                        <div class="color-option" data-color="#A0522D" style="background-color: #A0522D;" title="Siena"></div>
+                        <div class="color-option" data-color="#CD853F" style="background-color: #CD853F;" title="Perú"></div>
+                        <div class="color-option" data-color="#D2691E" style="background-color: #D2691E;" title="Chocolate"></div>
+                        <div class="color-option" data-color="#8B6914" style="background-color: #8B6914;" title="Dorado oscuro"></div>
+                    </div>
+                </div>
+                
+                <div class="control-section">
+                    <div class="control-label">📏 Tamaño de Pequitas</div>
+                    <input type="range" id="freckle-size" class="control-input" min="2" max="10" value="5">
+                    <small id="size-display">5px</small>
+                </div>
+                
+                <div class="control-section">
+                    <div class="control-label">🎯 Área de Colocación</div>
+                    <button class="button" id="toggle-brush">🖌️ Pincel de Área</button>
+                    <button class="button" id="clear-selection">Limpiar Selección</button>
+                    <div style="margin-top: 10px;">
+                        <label style="display: block; margin: 10px 0; color: #333;">
+                            Tamaño del pincel:
+                            <input type="range" id="brush-size" class="control-input" min="5" max="50" value="20">
+                            <small id="brush-size-display">20px</small>
+                        </label>
+                    </div>
+                    <small style="display: block; margin-top: 10px; color: #666;">Pinta el área donde quieres que aparezcan las pequitas. Los freckles aparecerán solo en la zona pintada.</small>
+                </div>
+                
+                <div class="control-section">
+                    <button class="button" id="regenerate">🔄 Regenerar Pequitas</button>
+                    <button class="button" id="download">💾 Descargar Imagen</button>
+                    <button class="button" id="reset-all">↻ Resetear Todo</button>
+                </div>
+            </div>
+        </div>
+        
+        <div id="status" class="status loading" style="display: none;"></div>
+        <div class="footer">Hecho con 💖 para Yazumimoon y sus fans</div>
+    </div>
+
+    <script>
+        let freckles = [];
+        let followerCount = 0;
+        let currentColor = '#8B4513';
+        let currentSize = 5;
+        let brushMode = false;
+        let brushSize = 20;
+        let selectionMask = null;
+        let imageLoaded = false;
+        let image = null;
+
+        const canvas = document.getElementById('freckle-canvas');
+        const ctx = canvas.getContext('2d');
+        const imageElement = document.getElementById('main-image');
+        const freckleCountDisplay = document.getElementById('freckle-count');
+        const status = document.getElementById('status');
+        const freckleSizeInput = document.getElementById('freckle-size');
+        const toggleBrushBtn = document.getElementById('toggle-brush');
+        const clearSelectionBtn = document.getElementById('clear-selection');
+        const regenerateBtn = document.getElementById('regenerate');
+        const downloadBtn = document.getElementById('download');
+        const resetBtn = document.getElementById('reset-all');
+        const sizeDisplay = document.getElementById('size-display');
+        const brushSizeInput = document.getElementById('brush-size');
+        const brushSizeDisplay = document.getElementById('brush-size-display');
+
+        // Create decorative stars in background - removed since we're using drawing app style
+        function createStars() {
+            // Stars not needed in drawing app layout
+        }
+
+        // Load image and set canvas size
+        imageElement.onload = function() {
+            imageLoaded = true;
+            canvas.width = imageElement.offsetWidth;
+            canvas.height = imageElement.offsetHeight;
+            
+            // Initialize selection mask (all black/not selected = no freckles anywhere)
+            selectionMask = ctx.createImageData(canvas.width, canvas.height);
+            const data = selectionMask.data;
+            for (let i = 0; i < data.length; i += 4) {
+                data[i] = 0;      // R
+                data[i + 1] = 0;  // G
+                data[i + 2] = 0;  // B
+                data[i + 3] = 0;  // Alpha = 0 (not selected)
+            }
+            
+            redrawFreckles();
+        };
+
+        // Handle image loading from file
+        imageElement.onerror = function() {
+            showStatus('Error cargando la imagen', 'error');
+        };
+
+        // Fetch followers from API
+        async function fetchFollowers() {
+            try {
+                showStatus('Cargando seguidores...', 'loading');
+                const response = await fetch('/api/followers');
+                const data = await response.json();
+                
+                if (data.followers) {
+                    followerCount = parseInt(data.followers);
+                    freckleCountDisplay.textContent = followerCount;
+                    generateFreckles();
+                    showStatus('¡Pequitas cargadas! 🎉', 'success');
+                    setTimeout(() => status.style.display = 'none', 3000);
+                } else {
+                    throw new Error('Invalid response');
+                }
+            } catch (error) {
+                console.error('Error fetching followers:', error);
+                showStatus('Error: No se pudieron cargar los seguidores', 'error');
+            }
+        }
+
+        // Check if a point is in the selected area
+        function isPointInSelection(x, y) {
+            if (!selectionMask) return false; // Changed to false - nothing selected by default
+            
+            x = Math.round(x);
+            y = Math.round(y);
+            
+            if (x < 0 || x >= canvas.width || y < 0 || y >= canvas.height) return false;
+            
+            const index = (y * canvas.width + x) * 4;
+            return selectionMask.data[index + 3] > 128; // Check if alpha is high (selected)
+        }
+
+        // Generate random freckles
+        function generateFreckles() {
+            freckles = [];
+            
+            // Soft pastel brown tones for cute anime aesthetic
+            const freckleColors = [
+                '#A0704D', // Warm taupe
+                '#B8845C', // Soft tan
+                '#9B6B47', // Gentle brown
+                '#C4956D', // Light caramel
+                '#997755', // Muted brown
+                '#A87C5C', // Warm sand
+                '#B39070', // Soft cocoa
+            ];
+            
+            // Keep generating until we have exactly the right number of freckles
+            let attempts = 0;
+            let maxAttempts = followerCount * 100;
+            
+            while (freckles.length < followerCount && attempts < maxAttempts) {
+                const x = Math.random() * canvas.width;
+                const y = Math.random() * canvas.height;
+                
+                if (isPointInSelection(x, y)) {
+                    // Vary size from 1.5 to 4 pixels for natural look (very small and cute)
+                    const size = 1.5 + Math.random() * 2.5;
+                    const opacity = 0.4 + Math.random() * 0.4; // 0.4 to 0.8 opacity for softness
+                    const color = freckleColors[Math.floor(Math.random() * freckleColors.length)];
+                    
+                    freckles.push({
+                        x: x,
+                        y: y,
+                        size: size,
+                        color: color,
+                        opacity: opacity
+                    });
+                }
+                attempts++;
+            }
+            
+            // If we still don't have enough freckles, force-place remaining
+            if (freckles.length < followerCount) {
+                const selectedPixels = [];
+                const data = selectionMask.data;
+                for (let i = 0; i < data.length; i += 4) {
+                    if (data[i + 3] > 128) {
+                        selectedPixels.push(i / 4);
+                    }
+                }
+                
+                if (selectedPixels.length > 0) {
+                    while (freckles.length < followerCount) {
+                        const pixelIndex = selectedPixels[Math.floor(Math.random() * selectedPixels.length)];
+                        const pixelX = (pixelIndex % canvas.width);
+                        const pixelY = Math.floor(pixelIndex / canvas.width);
+                        
+                        const offsetX = pixelX + (Math.random() - 0.5) * 4;
+                        const offsetY = pixelY + (Math.random() - 0.5) * 4;
+                        const size = 1.5 + Math.random() * 2.5;
+                        const opacity = 0.4 + Math.random() * 0.4;
+                        const color = freckleColors[Math.floor(Math.random() * freckleColors.length)];
+                        
+                        freckles.push({
+                            x: offsetX,
+                            y: offsetY,
+                            size: size,
+                            color: color,
+                            opacity: opacity
+                        });
+                    }
+                }
+            }
+            
+            console.log(`Generated ${freckles.length} freckles from ${followerCount} followers`);
+            redrawFreckles();
+        }
+
+        // Redraw all freckles on canvas with soft, subtle anime aesthetic
+        function redrawFreckles() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            
+            freckles.forEach(freckle => {
+                const radius = freckle.size / 2;
+                
+                // Create a soft, blurred freckle with pastel aesthetic
+                ctx.save();
+                
+                // Use soft compositing for blending with skin
+                ctx.globalAlpha = freckle.opacity * 0.7;
+                
+                // Create very soft radial gradient for natural skin blending
+                const gradient = ctx.createRadialGradient(
+                    freckle.x - radius * 0.4, 
+                    freckle.y - radius * 0.4, 
+                    0, 
+                    freckle.x, 
+                    freckle.y, 
+                    radius * 1.5
+                );
+                
+                // Soft pastel blend into skin
+                gradient.addColorStop(0, freckle.color);
+                gradient.addColorStop(0.4, freckle.color);
+                gradient.addColorStop(0.8, 'rgba(200, 150, 100, 0.2)'); // Blend to skin tone
+                gradient.addColorStop(1, 'rgba(200, 150, 100, 0)'); // Fade to transparent
+                
+                ctx.fillStyle = gradient;
+                ctx.beginPath();
+                ctx.arc(freckle.x, freckle.y, radius * 1.5, 0, Math.PI * 2);
+                ctx.fill();
+                
+                // Add a tiny highlight for cuteness (very subtle)
+                ctx.globalAlpha = freckle.opacity * 0.3;
+                ctx.fillStyle = 'rgba(255, 240, 220, 0.6)';
+                ctx.beginPath();
+                ctx.arc(
+                    freckle.x - radius * 0.5, 
+                    freckle.y - radius * 0.5, 
+                    radius * 0.6, 
+                    0, 
+                    Math.PI * 2
+                );
+                ctx.fill();
+                
+                ctx.restore();
+            });
+        }
+
+        // Update freckle size
+        freckleSizeInput.addEventListener('input', function() {
+            currentSize = parseInt(this.value);
+            sizeDisplay.textContent = currentSize + 'px';
+            freckles.forEach(freckle => freckle.size = currentSize);
+            redrawFreckles();
+        });
+
+        // Update brush size
+        brushSizeInput.addEventListener('input', function() {
+            brushSize = parseInt(this.value);
+            brushSizeDisplay.textContent = brushSize + 'px';
+        });
+
+        // Color picker
+        document.querySelectorAll('.color-option').forEach(option => {
+            option.addEventListener('click', function() {
+                document.querySelectorAll('.color-option').forEach(o => o.classList.remove('selected'));
+                this.classList.add('selected');
+                currentColor = this.getAttribute('data-color');
+                freckles.forEach(freckle => freckle.color = currentColor);
+                redrawFreckles();
+            });
+        });
+
+        // Toggle brush mode
+        toggleBrushBtn.addEventListener('click', function() {
+            brushMode = !brushMode;
+            this.textContent = brushMode ? '✓ Finalizar Pincel' : '🖌️ Pincel de Área';
+            this.style.background = brushMode ? '#4CAF50' : 'linear-gradient(135deg, #FF1493, #FF69B4)';
+            canvas.style.cursor = brushMode ? 'crosshair' : 'auto';
+            if (!brushMode) {
+                generateFreckles();
+            }
+        });
+
+        // Clear selection
+        clearSelectionBtn.addEventListener('click', function() {
+            if (selectionMask) {
+                const data = selectionMask.data;
+                for (let i = 0; i < data.length; i += 4) {
+                    data[i] = 0;
+                    data[i + 1] = 0;
+                    data[i + 2] = 0;
+                    data[i + 3] = 0; // Reset to all NOT selected
+                }
+                generateFreckles();
+                showStatus('Área limpiada - sin freckles', 'success');
+                setTimeout(() => status.style.display = 'none', 2000);
+            }
+        });
+
+        // Brush painting logic
+        canvas.addEventListener('mousedown', function(e) {
+            if (!brushMode || !selectionMask) return;
+            
+            const rect = canvas.getBoundingClientRect();
+            
+            function paint(e) {
+                const x = e.clientX - rect.left;
+                const y = e.clientY - rect.top;
+                
+                // Paint on the selection mask - mark as SELECTED (alpha = 255)
+                const data = selectionMask.data;
+                const radius = brushSize / 2;
+                
+                for (let dx = -radius; dx < radius; dx++) {
+                    for (let dy = -radius; dy < radius; dy++) {
+                        if (dx * dx + dy * dy <= radius * radius) {
+                            const px = Math.round(x + dx);
+                            const py = Math.round(y + dy);
+                            
+                            if (px >= 0 && px < canvas.width && py >= 0 && py < canvas.height) {
+                                const index = (py * canvas.width + px) * 4;
+                                data[index] = 255;      // R
+                                data[index + 1] = 0;    // G
+                                data[index + 2] = 0;    // B
+                                data[index + 3] = 255;  // Alpha = 255 (SELECTED)
+                            }
+                        }
+                    }
+                }
+                
+                // Draw visual feedback on canvas - pink/red brush stroke
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                ctx.putImageData(selectionMask, 0, 0);
+                
+                // Draw brush circle outline for better visibility
+                ctx.strokeStyle = 'rgba(255, 105, 180, 0.8)';
+                ctx.lineWidth = 2;
+                ctx.beginPath();
+                ctx.arc(x, y, brushSize / 2, 0, Math.PI * 2);
+                ctx.stroke();
+            }
+            
+            canvas.addEventListener('mousemove', paint);
+            
+            document.addEventListener('mouseup', function stopPainting() {
+                canvas.removeEventListener('mousemove', paint);
+                document.removeEventListener('mouseup', stopPainting);
+                
+                // Redraw to show the final selection
+                redrawFreckles();
+            }, { once: true });
+        });
+
+        // Regenerate freckles
+        regenerateBtn.addEventListener('click', generateFreckles);
+
+        // Reset everything
+        resetBtn.addEventListener('click', function() {
+            // Reset selection mask to all NOT selected
+            if (selectionMask) {
+                const data = selectionMask.data;
+                for (let i = 0; i < data.length; i += 4) {
+                    data[i] = 0;
+                    data[i + 1] = 0;
+                    data[i + 2] = 0;
+                    data[i + 3] = 0; // Reset to all NOT selected
+                }
+            }
+            
+            currentSize = 5;
+            currentColor = '#8B4513';
+            brushSize = 20;
+            freckleSizeInput.value = 5;
+            brushSizeInput.value = 20;
+            sizeDisplay.textContent = '5px';
+            brushSizeDisplay.textContent = '20px';
+            brushMode = false;
+            toggleBrushBtn.textContent = '🖌️ Pincel de Área';
+            toggleBrushBtn.style.background = '';
+            canvas.style.cursor = 'auto';
+            
+            document.querySelectorAll('.color-option').forEach(o => o.classList.remove('selected'));
+            document.querySelector('[data-color="#8B4513"]').classList.add('selected');
+            
+            generateFreckles();
+            showStatus('Todo reseteado ✨', 'success');
+            setTimeout(() => status.style.display = 'none', 2000);
+        });
+
+        // Download image
+        downloadBtn.addEventListener('click', function() {
+            const downloadCanvas = document.createElement('canvas');
+            downloadCanvas.width = imageElement.naturalWidth;
+            downloadCanvas.height = imageElement.naturalHeight;
+            const downloadCtx = downloadCanvas.getContext('2d');
+            
+            downloadCtx.drawImage(imageElement, 0, 0);
+            
+            // Scale freckles to match original image size
+            const scaleX = imageElement.naturalWidth / canvas.width;
+            const scaleY = imageElement.naturalHeight / canvas.height;
+            
+            freckles.forEach(freckle => {
+                const radius = freckle.size / 2 * Math.min(scaleX, scaleY);
+                const scaledX = freckle.x * scaleX;
+                const scaledY = freckle.y * scaleY;
+                
+                downloadCtx.save();
+                downloadCtx.globalAlpha = freckle.opacity * 0.7;
+                
+                // Soft radial gradient for natural skin blending
+                const gradient = downloadCtx.createRadialGradient(
+                    scaledX - radius * 0.4,
+                    scaledY - radius * 0.4,
+                    0,
+                    scaledX,
+                    scaledY,
+                    radius * 1.5
+                );
+                
+                gradient.addColorStop(0, freckle.color);
+                gradient.addColorStop(0.4, freckle.color);
+                gradient.addColorStop(0.8, 'rgba(200, 150, 100, 0.2)');
+                gradient.addColorStop(1, 'rgba(200, 150, 100, 0)');
+                
+                downloadCtx.fillStyle = gradient;
+                downloadCtx.beginPath();
+                downloadCtx.arc(scaledX, scaledY, radius * 1.5, 0, Math.PI * 2);
+                downloadCtx.fill();
+                
+                // Subtle highlight
+                downloadCtx.globalAlpha = freckle.opacity * 0.3;
+                downloadCtx.fillStyle = 'rgba(255, 240, 220, 0.6)';
+                downloadCtx.beginPath();
+                downloadCtx.arc(
+                    scaledX - radius * 0.5,
+                    scaledY - radius * 0.5,
+                    radius * 0.6,
+                    0,
+                    Math.PI * 2
+                );
+                downloadCtx.fill();
+                
+                downloadCtx.restore();
+            });
+            
+            const link = document.createElement('a');
+            link.href = downloadCanvas.toDataURL('image/png');
+            link.download = 'yazumimoon_con_pequitas.png';
+            link.click();
+        });
+
+        // Show status message
+        function showStatus(message, type) {
+            status.textContent = message;
+            status.className = 'status ' + type;
+            status.style.display = 'block';
+        }
+
+        // Initialize
+        window.addEventListener('load', function() {
+            createStars();
+            fetchFollowers();
+        });
+    </script>
+</body>
+</html>
