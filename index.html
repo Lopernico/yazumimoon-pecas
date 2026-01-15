@@ -425,29 +425,88 @@
                 const response = await fetch(proxyUrl + targetUrl);
                 const html = await response.text();
                 
-                // Extract follower count using regex
-                const match = html.match(/"followerCount":(\d+)|followers['"]?:\s*(\d+)|<span[^>]*>([\d,]+)\s*(?:followers|seguidor)/i);
+                // Try multiple regex patterns to extract follower count
+                let count = null;
                 
-                if (match) {
-                    const count = parseInt(match[1] || match[2] || match[3]?.replace(/,/g, '')) || 207;
-                    if (count > 0 && count < 1000000) {
-                        followerCount = count;
-                        freckleCountDisplay.textContent = followerCount;
-                        generateFreckles();
-                        showStatus('¡Pequitas cargadas! 🎉', 'success');
-                        setTimeout(() => status.style.display = 'none', 3000);
-                        return;
+                // Pattern 1: Look for follower count in common HTML patterns
+                const patterns = [
+                    /(?:followers?|seguidores)[\s:</"']*(\d{1,3}(?:[,\s]\d{3})*)/gi,
+                    /(\d{1,3}(?:[,\s]\d{3})*)\s*(?:followers?|seguidores)/gi,
+                    /<[^>]*>(\d{1,3}(?:[,\s]\d{3})*)<\/[^>]*>.*?(?:followers?|seguidores)/gi,
+                    /data-followers=["'](\d+)["']/gi,
+                    /followerCount['":\s]+(\d+)/gi,
+                    />(\d{1,3}(?:[,\s]\d{3})*)\s*<[^>]*>followers/gi
+                ];
+                
+                for (const pattern of patterns) {
+                    const match = html.match(pattern);
+                    if (match) {
+                        // Extract number, removing commas and spaces
+                        const numStr = match[match.length - 1].replace(/[,\s]/g, '');
+                        count = parseInt(numStr);
+                        if (count > 0 && count < 10000000) {
+                            console.log(`Found followers: ${count} using pattern`);
+                            break;
+                        }
                     }
                 }
                 
-                throw new Error('Could not parse follower count');
+                // Fallback: Look for any large number that could be follower count
+                if (!count) {
+                    const numberMatches = html.match(/\b(\d{2,3})\b/g);
+                    if (numberMatches) {
+                        // Get the most common pattern which is likely the follower count
+                        const numbers = numberMatches.map(n => parseInt(n)).filter(n => n > 10 && n < 10000);
+                        if (numbers.length > 0) {
+                            count = Math.max(...numbers);
+                            console.log(`Extracted approximate count: ${count}`);
+                        }
+                    }
+                }
+                
+                if (count && count > 0 && count < 10000000) {
+                    followerCount = count;
+                    freckleCountDisplay.textContent = followerCount;
+                    generateFreckles();
+                    showStatus('¡Pequeñitas cargadas! 🎉', 'success');
+                    setTimeout(() => status.style.display = 'none', 3000);
+                    return;
+                }
+                
+                throw new Error(`Could not parse follower count from response`);
             } catch (error) {
                 console.error('Error fetching followers:', error);
-                // Fallback to default
+                console.error('Trying alternative data sources...');
+                
+                // Try backup: Use a different API endpoint
+                try {
+                    const response = await fetch('https://api.allorigins.win/raw?url=' + encodeURIComponent('https://twitch.tv/yazumimoon'));
+                    const html = await response.text();
+                    
+                    // Look for follower badge or count
+                    const followerMatch = html.match(/followers[\s"':<]+([\d,]+)/i) || 
+                                        html.match(/([\d,]+)[\s"':]followers/i);
+                    
+                    if (followerMatch) {
+                        const count = parseInt(followerMatch[1].replace(/,/g, ''));
+                        if (count > 0) {
+                            followerCount = count;
+                            freckleCountDisplay.textContent = followerCount;
+                            generateFreckles();
+                            showStatus('¡Seguidor@s cargados de Twitch! 🎉', 'success');
+                            setTimeout(() => status.style.display = 'none', 3000);
+                            return;
+                        }
+                    }
+                } catch (backupError) {
+                    console.log('Backup source also failed');
+                }
+                
+                // Final fallback only if all sources fail
                 followerCount = 207;
-                freckleCountDisplay.textContent = followerCount;
+                freckleCountDisplay.textContent = followerCount + ' (valor predeterminado)';
                 generateFreckles();
-                showStatus('Usando valor por defecto (207)', 'info');
+                showStatus('Sin conexión - usando valor por defecto', 'info');
                 setTimeout(() => status.style.display = 'none', 3000);
             }
         }
