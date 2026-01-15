@@ -288,7 +288,7 @@
         
         <div class="main-content">
             <div class="image-container">
-                <img id="main-image" src="../yazu cerrada.png" alt="Yazumimoon">
+                <img id="main-image" src="../yazu%20cerrada.png" alt="Yazumimoon">
                 <canvas id="freckle-canvas" class="canvas-overlay"></canvas>
             </div>
             
@@ -331,18 +331,58 @@
             </div>
         </div>
         
-        <div class="footer">Hecho con 💖 para Yazumimoon y sus fans | <a href="https://github.com/tu-usuario/yazumimoon-pecas" style="color: #FF1493; text-decoration: none;">GitHub</a></div>
+        <div class="footer">Hecho con 💖 para Yazumimoon y sus fans | <a href="https://github.com/Lopernico/yazumimoon-pecas" style="color: #FF1493; text-decoration: none;">GitHub</a></div>
     </div>
 
     <script>
         let freckles = [];
-        let followerCount = 207; // Default count for static version
+        let followerCount = 207; // Default count, will be updated
         let currentColor = '#A0704D';
         let currentSize = 5;
         let brushMode = false;
         let brushSize = 20;
         let selectionMask = null;
         let imageLoaded = false;
+        
+        // Fetch followers count dynamically
+        async function fetchFollowers() {
+            try {
+                showStatus('Cargando seguidores...', 'loading');
+                
+                // Try to fetch from a CORS-enabled API
+                // Using direct approach with jsonp or alternative source
+                const proxyUrl = 'https://api.allorigins.win/raw?url=';
+                const targetUrl = encodeURIComponent('https://www.nicheprowler.com/tools/twitch/twitch-follower-checker?query=yazumimoon');
+                
+                const response = await fetch(proxyUrl + targetUrl);
+                const html = await response.text();
+                
+                // Extract follower count using regex
+                const match = html.match(/"followerCount":(\d+)|followers['"]?:\s*(\d+)|<span[^>]*>([\d,]+)\s*(?:followers|seguidor)/i);
+                
+                if (match) {
+                    const count = parseInt(match[1] || match[2] || match[3]?.replace(/,/g, '')) || 207;
+                    if (count > 0 && count < 1000000) {
+                        followerCount = count;
+                        freckleCountDisplay.textContent = followerCount;
+                        generateFreckles();
+                        showStatus('¡Pequitas cargadas! 🎉', 'success');
+                        setTimeout(() => status.style.display = 'none', 3000);
+                        return;
+                    }
+                }
+                
+                throw new Error('Could not parse follower count');
+            } catch (error) {
+                console.error('Error fetching followers:', error);
+                // Use default or try alternative method
+                followerCount = 207;
+                freckleCountDisplay.textContent = followerCount;
+                generateFreckles();
+                showStatus('Usando valor por defecto (207)', 'info');
+                setTimeout(() => status.style.display = 'none', 3000);
+            }
+        }
 
         const canvas = document.getElementById('freckle-canvas');
         const ctx = canvas.getContext('2d');
@@ -676,9 +716,7 @@
         // Initialize
         window.addEventListener('load', function() {
             if (imageLoaded) {
-                generateFreckles();
-                showStatus('¡Listo! Pinta un área para empezar 🎨', 'success');
-                setTimeout(() => status.style.display = 'none', 3000);
+                fetchFollowers();
             }
         });
     </script>
