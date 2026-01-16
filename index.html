@@ -117,6 +117,7 @@
             height: auto;
             border-radius: 10px;
             display: block;
+            transition: opacity 0.3s ease;
         }
         
         .image-container img:hover {
@@ -330,6 +331,11 @@
                 </div>
                 
                 <div class="control-section">
+                    <div class="control-label">🖼️ Cambiar Imagen</div>
+                    <button class="button" id="toggle-image">Cambiar a Pixel</button>
+                </div>
+                
+                <div class="control-section">
                     <button class="button" id="regenerate">🔄 Regenerar Pequitas</button>
                     <button class="button" id="download">💾 Descargar Imagen</button>
                     <button class="button" id="reset-all">↻ Resetear Todo</button>
@@ -350,6 +356,8 @@
         let brushSize = 20;
         let selectionMask = null;
         let imageLoaded = false;
+        let currentImageIndex = 0;
+        const images = ['yazu%20cerrada.png', 'Yazu%20pixel.png'];
         let image = null;
 
         const canvas = document.getElementById('freckle-canvas');
@@ -366,6 +374,7 @@
         const sizeDisplay = document.getElementById('size-display');
         const brushSizeInput = document.getElementById('brush-size');
         const brushSizeDisplay = document.getElementById('brush-size-display');
+        const toggleImageBtn = document.getElementById('toggle-image');
 
         // Create decorative stars in background - removed since we're using drawing app style
         function createStars() {
@@ -389,6 +398,7 @@
             }
             
             redrawFreckles();
+            imageElement.style.opacity = 1;
         };
 
         // Handle image loading from file
@@ -519,10 +529,10 @@
                 }
                 
                 // Final fallback only if all sources fail
-                followerCount = 207;
-                freckleCountDisplay.textContent = followerCount + ' (valor predeterminado)';
+                followerCount = 0;
+                freckleCountDisplay.textContent = 'Error cargando seguidores';
                 generateFreckles();
-                showStatus('Sin conexión - usando valor por defecto', 'info');
+                showStatus('Error: No se pudo cargar el conteo de seguidores', 'error');
                 setTimeout(() => status.style.display = 'none', 3000);
             }
         }
@@ -808,6 +818,16 @@
             generateFreckles();
             showStatus('Todo reseteado ✨', 'success');
             setTimeout(() => status.style.display = 'none', 2000);
+        });
+
+        // Toggle image
+        toggleImageBtn.addEventListener('click', function() {
+            imageElement.style.opacity = 0;
+            setTimeout(() => {
+                currentImageIndex = (currentImageIndex + 1) % 2;
+                imageElement.src = images[currentImageIndex];
+                toggleImageBtn.textContent = currentImageIndex === 0 ? 'Cambiar a Pixel' : 'Cambiar a Cerrada';
+            }, 150);
         });
 
         // Download image

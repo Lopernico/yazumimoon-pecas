@@ -113,6 +113,7 @@
             height: auto;
             border-radius: 10px;
             display: block;
+            transition: opacity 0.3s ease;
         }
         
         .canvas-overlay {
@@ -327,6 +328,11 @@
                 </div>
                 
                 <div class="control-section">
+                    <label class="control-label">🖼️ Cambiar Imagen</label>
+                    <button class="button" id="toggle-image">Cambiar a Pixel</button>
+                </div>
+                
+                <div class="control-section">
                     <button class="button" id="regenerate">🔄 Regenerar</button>
                     <button class="button" id="download">💾 Descargar</button>
                     <button class="button" id="reset-all">↻ Resetear</button>
@@ -348,6 +354,8 @@
         let brushSize = 20;
         let selectionMask = null;
         let imageLoaded = false;
+        let currentImageIndex = 0;
+        const images = ['yazu%20cerrada.png', 'Yazu%20pixel.png'];
         
         // Fetch followers count dynamically
         async function fetchFollowers() {
@@ -454,7 +462,7 @@
                 
                 // Final fallback only if all sources fail
                 followerCount = 207;
-                freckleCountDisplay.textContent = followerCount + ' (valor predeterminado)';
+                freckleCountDisplay.textContent = followerCount ;
                 generateFreckles();
                 showStatus('Sin conexión - usando valor por defecto', 'info');
                 setTimeout(() => status.style.display = 'none', 3000);
@@ -475,6 +483,7 @@
         const sizeDisplay = document.getElementById('size-display');
         const brushSizeInput = document.getElementById('brush-size');
         const brushSizeDisplay = document.getElementById('brush-size-display');
+        const toggleImageBtn = document.getElementById('toggle-image');
 
         // Load image and set canvas size
         imageElement.onload = function() {
@@ -493,6 +502,7 @@
             }
             
             redrawFreckles();
+            imageElement.style.opacity = 1;
         };
 
         imageElement.onerror = function() {
@@ -731,6 +741,16 @@
             generateFreckles();
             showStatus('Reseteado ✨', 'success');
             setTimeout(() => status.style.display = 'none', 2000);
+        });
+
+        // Toggle image
+        toggleImageBtn.addEventListener('click', function() {
+            imageElement.style.opacity = 0;
+            setTimeout(() => {
+                currentImageIndex = (currentImageIndex + 1) % 2;
+                imageElement.src = images[currentImageIndex];
+                toggleImageBtn.textContent = currentImageIndex === 0 ? 'Cambiar a Pixel' : 'Cambiar a Cerrada';
+            }, 150);
         });
 
         // Download
