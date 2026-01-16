@@ -412,21 +412,17 @@
                 showStatus('Cargando seguidores...', 'loading');
                 
                 // Try local API first (for development with Python server)
-                const localController = new AbortController();
-                const localTimeoutId = setTimeout(() => localController.abort(), 2000);
                 try {
-                    const response = await fetch('/api/followers', { signal: localController.signal });
-                    clearTimeout(localTimeoutId);
-                    if (response.ok) {
-                        const data = await response.json();
-                        if (data.followers) {
-                            followerCount = parseInt(data.followers);
-                            freckleCountDisplay.textContent = followerCount;
-                            generateFreckles();
-                            showStatus('¡Pequitas cargadas! 🎉', 'success');
-                            setTimeout(() => status.style.display = 'none', 3000);
-                            return;
-                        }
+                    const response = await fetch('/api/followers', { timeout: 2000 });
+                    const data = await response.json();
+                    
+                    if (data.followers) {
+                        followerCount = parseInt(data.followers);
+                        freckleCountDisplay.textContent = followerCount;
+                        generateFreckles();
+                        showStatus('¡Pequitas cargadas! 🎉', 'success');
+                        setTimeout(() => status.style.display = 'none', 3000);
+                        return;
                     }
                 } catch (localError) {
                     console.log('Local API not available, trying CORS proxy...');
@@ -434,63 +430,61 @@
                 
                 // Fallback: Use CORS proxy for GitHub Pages
                 const proxyUrl = 'https://api.allorigins.win/raw?url=';
-                const targetUrl = encodeURIComponent('https://twitchtracker.com/yazumimoon');
+                const targetUrl = encodeURIComponent('https://www.nicheprowler.com/tools/twitch/twitch-follower-checker?query=yazumimoon');
                 
-                const proxyController = new AbortController();
-                const proxyTimeoutId = setTimeout(() => proxyController.abort(), 10000); // 10 second timeout
-                const response = await fetch(proxyUrl + targetUrl, { signal: proxyController.signal });
-                clearTimeout(proxyTimeoutId);
+                const response = await fetch(proxyUrl + targetUrl);
                 const html = await response.text();
                 
                 // Try multiple regex patterns to extract follower count
                 let count = null;
                 
-                // Pattern 1: Look for followers count on TwitchTracker
-                let match = html.match(/followers.*?(\d+(?:,\d{3})*)/i);
+                // Pattern 1: Look for specific NicheProwler structure: "Total Followers: ...>NUMBER<"
+                let match = html.match(/Total\s+Followers:\s*.*?>(\d+)</i);
                 if (match) {
-                    count = parseInt(match[1].replace(/,/g, ''));
-                    console.log(`Found followers via followers pattern: ${count}`);
+                    count = parseInt(match[1]);
+                    console.log(`Found followers via Total Followers pattern: ${count}`);
                 }
                 
-                // Pattern 2: Look for large number in HTML
+                // Pattern 2: Look for bold large number display (the main display count)
                 if (!count) {
-                    match = html.match(/<[^>]*>(\d{3,})<[^>]*>/i);
+                    match = html.match(/font-bold[^>]*>(\d+)</i);
                     if (match) {
-                        const testCount = parseInt(match[1].replace(/,/g, ''));
-                        if (testCount > 50) {
+                        const testCount = parseInt(match[1]);
+                        if (testCount > 50) { // Likely the real count, not a day/time/etc
                             count = testCount;
-                            console.log(`Found followers via HTML number pattern: ${count}`);
+                            console.log(`Found followers via bold pattern: ${count}`);
                         }
                     }
                 }
                 
-                // Pattern 3: Look for "X followers" pattern
+                // Pattern 3: Look for "has X followers" pattern
                 if (!count) {
-                    match = html.match(/(\d+(?:,\d{3})*)\s+followers/i);
+                    match = html.match(/has\s+(\d+)\s+followers/i);
                     if (match) {
                         count = parseInt(match[1]);
                         console.log(`Found followers via "has X followers" pattern: ${count}`);
                     }
                 }
                 
-                // Pattern 4: Look for followers followed by number
+                // Pattern 4: Direct number before "followers" text
                 if (!count) {
-                    match = html.match(/followers[\s"':<]+([\d,]+)/i);
+                    match = html.match(/>(\d{2,})[\s<]/i);
                     if (match) {
-                        count = parseInt(match[1].replace(/,/g, ''));
-                        console.log(`Found followers via followers number pattern: ${count}`);
+                        const testCount = parseInt(match[1]);
+                        if (testCount > 50) {
+                            count = testCount;
+                            console.log(`Found followers via >NUMBER< pattern: ${count}`);
+                        }
                     }
                 }
                 
-                // Pattern 5: General large number
+                // Pattern 5: Formatted count like "207" with commas for larger numbers
                 if (!count) {
-                    match = html.match(/(\d{3,})/);
+                    match = html.match(/Formatted\s+Count.*?>(\d+)</i) || 
+                           html.match(/formatted.*?>(\d+)</i);
                     if (match) {
-                        const testCount = parseInt(match[1].replace(/,/g, ''));
-                        if (testCount > 50 && testCount < 10000000) {
-                            count = testCount;
-                            console.log(`Found followers via general number pattern: ${count}`);
-                        }
+                        count = parseInt(match[1]);
+                        console.log(`Found followers via formatted count pattern: ${count}`);
                     }
                 }
                 
@@ -509,11 +503,8 @@
                 console.error('Trying alternative data sources...');
                 
                 // Try backup: Use Twitch direct
-                const twitchController = new AbortController();
-                const twitchTimeoutId = setTimeout(() => twitchController.abort(), 10000);
                 try {
-                    const response = await fetch('https://api.allorigins.win/raw?url=' + encodeURIComponent('https://twitch.tv/yazumimoon'), { signal: twitchController.signal });
-                    clearTimeout(twitchTimeoutId);
+                    const response = await fetch('https://api.allorigins.win/raw?url=' + encodeURIComponent('https://twitch.tv/yazumimoon'));
                     const html = await response.text();
                     
                     // Look for follower badge or count on Twitch page
