@@ -391,10 +391,12 @@
         const sizeDisplay = document.getElementById('size-display');
         const brushSizeInput = document.getElementById('brush-size');
         const brushSizeDisplay = document.getElementById('brush-size-display');
+        const toggleImageBtn = document.getElementById('toggle-image');
         const togglePersonalImageBtn = document.getElementById('toggle-personal-image');
         const personalImageSection = document.getElementById('personal-image-section');
         const dropZone = document.getElementById('drop-zone');
         const imageInput = document.getElementById('image-input');
+        let currentImageMode = 'cerrada'; // 'cerrada' or 'pixel'
 
         // Create decorative stars in background - removed since we're using drawing app style
         function createStars() {
@@ -921,6 +923,29 @@
                 togglePersonalImageBtn.style.background = '';
                 personalImageSection.style.display = 'none';
                 showStatus('Volviendo al modo original', 'success');
+            }
+            
+            setTimeout(() => status.style.display = 'none', 2000);
+        });
+
+        // Toggle between Cerrada and Pixel images
+        toggleImageBtn.addEventListener('click', function() {
+            if (personalImageMode) {
+                showStatus('Desactiva el modo imagen personal primero', 'error');
+                setTimeout(() => status.style.display = 'none', 2000);
+                return;
+            }
+            
+            if (currentImageMode === 'cerrada') {
+                imageElement.src = 'docs/Yazu pixel.png';
+                currentImageMode = 'pixel';
+                toggleImageBtn.textContent = 'Cambiar a Cerrada';
+                showStatus('Cambiado a imagen Pixel', 'success');
+            } else {
+                imageElement.src = 'yazu%20cerrada.png';
+                currentImageMode = 'cerrada';
+                toggleImageBtn.textContent = 'Cambiar a Pixel';
+                showStatus('Cambiado a imagen Cerrada', 'success');
             }
             
             setTimeout(() => status.style.display = 'none', 2000);
