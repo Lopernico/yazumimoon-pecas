@@ -279,6 +279,7 @@
             }
         }
     </style>
+
 </head>
 <body>
     <div class="container">
@@ -287,7 +288,7 @@
             <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 5px;">
                 <div class="subtitle" style="margin: 0; font-size: 1em;">Contador de Pequitas</div>
                 <div class="follower-count" style="margin: 0; font-size: 1.2em;">
-                    <span id="freckle-count">Cargando...</span> Pequitas
+                    <span id="freckle-count">Cargando...</span> pequeñitas
                 </div>
             </div>
         </div>
@@ -331,8 +332,25 @@
                 </div>
                 
                 <div class="control-section">
-                    <div class="control-label">🖼️ Cambiar Imagen</div>
                     <button class="button" id="toggle-image">Cambiar a Pixel</button>
+                    <button class="button" id="toggle-personal-image">Usar imagen personal</button>
+                </div>
+                
+                <div id="personal-image-section" class="control-section" style="display: none;">
+                    <div class="control-label">📸 Tu Imagen</div>
+                    <div id="drop-zone" style="
+                        border: 2px dashed #C49A6C;
+                        border-radius: 10px;
+                        padding: 20px;
+                        text-align: center;
+                        background: #FFF9F5;
+                        cursor: pointer;
+                        transition: all 0.3s ease;
+                    ">
+                        <p style="margin: 0; color: #8B5E3C; font-weight: bold;">📁 Arrastra tu imagen aquí</p>
+                        <p style="margin: 5px 0 0 0; color: #999; font-size: 0.85em;">o haz clic para seleccionar</p>
+                        <input type="file" id="image-input" accept="image/*" style="display: none;">
+                    </div>
                 </div>
                 
                 <div class="control-section">
@@ -344,7 +362,7 @@
         </div>
         
         <div id="status" class="status loading" style="display: none;"></div>
-        <div class="footer">para Yazumimoon y sus Pequitas (seguidores)</div>
+        <div class="footer">Hecho con 💖 para Yazumimoon y sus fans</div>
     </div>
 
     <script>
@@ -356,9 +374,8 @@
         let brushSize = 20;
         let selectionMask = null;
         let imageLoaded = false;
-        let currentImageIndex = 0;
-        const images = ['yazu%20cerrada.png', 'Yazu%20pixel.png'];
         let image = null;
+        let personalImageMode = false;
 
         const canvas = document.getElementById('freckle-canvas');
         const ctx = canvas.getContext('2d');
@@ -374,7 +391,10 @@
         const sizeDisplay = document.getElementById('size-display');
         const brushSizeInput = document.getElementById('brush-size');
         const brushSizeDisplay = document.getElementById('brush-size-display');
-        const toggleImageBtn = document.getElementById('toggle-image');
+        const togglePersonalImageBtn = document.getElementById('toggle-personal-image');
+        const personalImageSection = document.getElementById('personal-image-section');
+        const dropZone = document.getElementById('drop-zone');
+        const imageInput = document.getElementById('image-input');
 
         // Create decorative stars in background - removed since we're using drawing app style
         function createStars() {
@@ -398,7 +418,6 @@
             }
             
             redrawFreckles();
-            imageElement.style.opacity = 1;
         };
 
         // Handle image loading from file
@@ -492,7 +511,7 @@
                     followerCount = count;
                     freckleCountDisplay.textContent = followerCount;
                     generateFreckles();
-                    showStatus('¡Pequitas cargadas! 🎉', 'success');
+                    showStatus('¡Pequeñitas cargadas! 🎉', 'success');
                     setTimeout(() => status.style.display = 'none', 3000);
                     return;
                 }
@@ -530,10 +549,9 @@
                 
                 // Final fallback only if all sources fail
                 followerCount = 207;
-                freckleCountDisplay.textContent = followerCount;
+                freckleCountDisplay.textContent = followerCount + ' (valor predeterminado)';
                 generateFreckles();
-                console.log('Using default follower count: 207');
-                showStatus('Error: No se pudo cargar el conteo de seguidores', 'error');
+                showStatus('Sin conexión - usando valor por defecto', 'info');
                 setTimeout(() => status.style.display = 'none', 3000);
             }
         }
@@ -821,16 +839,6 @@
             setTimeout(() => status.style.display = 'none', 2000);
         });
 
-        // Toggle image
-        toggleImageBtn.addEventListener('click', function() {
-            imageElement.style.opacity = 0;
-            setTimeout(() => {
-                currentImageIndex = (currentImageIndex + 1) % 2;
-                imageElement.src = images[currentImageIndex];
-                toggleImageBtn.textContent = currentImageIndex === 0 ? 'Cambiar a Pixel' : 'Cambiar a Cerrada';
-            }, 150);
-        });
-
         // Download image
         downloadBtn.addEventListener('click', function() {
             const downloadCanvas = document.createElement('canvas');
@@ -899,6 +907,89 @@
             status.textContent = message;
             status.className = 'status ' + type;
             status.style.display = 'block';
+        }
+
+        // Toggle personal image mode
+        togglePersonalImageBtn.addEventListener('click', function() {
+            personalImageMode = !personalImageMode;
+            
+            if (personalImageMode) {
+                togglePersonalImageBtn.style.background = '#6A4C93';
+                personalImageSection.style.display = 'block';
+                showStatus('Modo imagen personal activado', 'success');
+            } else {
+                togglePersonalImageBtn.style.background = '';
+                personalImageSection.style.display = 'none';
+                showStatus('Volviendo al modo original', 'success');
+            }
+            
+            setTimeout(() => status.style.display = 'none', 2000);
+        });
+
+        // Handle drag and drop
+        dropZone.addEventListener('click', function() {
+            imageInput.click();
+        });
+
+        dropZone.addEventListener('dragover', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            dropZone.style.background = '#FFE8F0';
+            dropZone.style.borderColor = '#C97C5D';
+        });
+
+        dropZone.addEventListener('dragleave', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            dropZone.style.background = '#FFF9F5';
+            dropZone.style.borderColor = '#C49A6C';
+        });
+
+        dropZone.addEventListener('drop', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            dropZone.style.background = '#FFF9F5';
+            dropZone.style.borderColor = '#C49A6C';
+            
+            const files = e.dataTransfer.files;
+            if (files.length > 0) {
+                processImageFile(files[0]);
+            }
+        });
+
+        imageInput.addEventListener('change', function(e) {
+            if (this.files.length > 0) {
+                processImageFile(this.files[0]);
+            }
+        });
+
+        function processImageFile(file) {
+            if (!file.type.startsWith('image/')) {
+                showStatus('Por favor, selecciona un archivo de imagen válido', 'error');
+                setTimeout(() => status.style.display = 'none', 3000);
+                return;
+            }
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const img = new Image();
+                img.onload = function() {
+                    imageElement.src = e.target.result;
+                    imageElement.onload();
+                    showStatus('¡Imagen cargada! Ahora puedes agregar pequeñitas', 'success');
+                    setTimeout(() => status.style.display = 'none', 2000);
+                };
+                img.onerror = function() {
+                    showStatus('Error al cargar la imagen', 'error');
+                    setTimeout(() => status.style.display = 'none', 3000);
+                };
+                img.src = e.target.result;
+            };
+            reader.onerror = function() {
+                showStatus('Error al leer el archivo', 'error');
+                setTimeout(() => status.style.display = 'none', 3000);
+            };
+            reader.readAsDataURL(file);
         }
 
         // Initialize
