@@ -288,7 +288,7 @@
             <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 5px;">
                 <div class="subtitle" style="margin: 0; font-size: 1em;">Contador de Pequitas</div>
                 <div class="follower-count" style="margin: 0; font-size: 1.2em;">
-                    <span id="freckle-count">Cargando...</span> pequeñitas
+                    <span id="freckle-count">Cargando...</span> Pequitas
                 </div>
             </div>
         </div>
@@ -513,7 +513,7 @@
                     followerCount = count;
                     freckleCountDisplay.textContent = followerCount;
                     generateFreckles();
-                    showStatus('¡Pequeñitas cargadas! 🎉', 'success');
+                    showStatus('¡Pequitas cargadas! 🎉', 'success');
                     setTimeout(() => status.style.display = 'none', 3000);
                     return;
                 }
@@ -1001,7 +1001,7 @@
                 img.onload = function() {
                     imageElement.src = e.target.result;
                     imageElement.onload();
-                    showStatus('¡Imagen cargada! Ahora puedes agregar pequeñitas', 'success');
+                    showStatus('¡Imagen cargada! Ahora puedes agregar Pequitas', 'success');
                     setTimeout(() => status.style.display = 'none', 2000);
                 };
                 img.onerror = function() {
@@ -1025,3 +1025,4 @@
     </script>
 </body>
 </html>
+
